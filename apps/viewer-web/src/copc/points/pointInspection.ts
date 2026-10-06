@@ -131,7 +131,12 @@ export function inspectCopcPoint(
 
   for (const [name, values] of Object.entries(points.attributes?.extraDimensions ?? {})) {
     if (pickId.pointIndex < values.length) {
-      (inspection.dimensions ??= {})[name] = values[pickId.pointIndex];
+      Object.defineProperty(inspection.dimensions ??= {}, name, {
+        value: values[pickId.pointIndex],
+        enumerable: true,
+        configurable: true,
+        writable: true,
+      });
     }
   }
 

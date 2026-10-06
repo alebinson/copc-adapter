@@ -164,6 +164,21 @@ test('decodeCopcPointBuffer copies extra dimensions into typed arrays that match
   assert.doesNotThrow(() => validateCopcPointBuffer(buffer));
 });
 
+test('dimension names that match object prototype properties remain own data fields', async () => {
+  const sourceView = createSourceView();
+  const readers = new Map([
+    ['__proto__', { valueType: 'float64', read: () => 42 }],
+  ]);
+  const buffer = await decodeCopcPointBuffer(
+    toCopcPointView(sourceView, getCopcPointFieldSelection('fixed'), readers),
+  );
+  const dimensions = buffer.attributes.extraDimensions;
+
+  assert.equal(Object.getPrototypeOf(dimensions), Object.prototype);
+  assert.equal(Object.hasOwn(dimensions, '__proto__'), true);
+  assert.deepEqual([...dimensions['__proto__']], [42, 42]);
+});
+
 test('point inspection reports requested extra dimensions for the picked point', () => {
   const points = {
     pointCount: 2,
@@ -186,6 +201,28 @@ test('point inspection reports requested extra dimensions for the picked point',
     'copc-js',
   );
   assert.equal(withoutExtra.dimensions, undefined);
+});
+
+test('point inspection preserves an extra dimension named __proto__', () => {
+  const extraDimensions = Object.fromEntries([
+    ['__proto__', new BigUint64Array([7n])],
+  ]);
+  const points = {
+    pointCount: 1,
+    coordinates: new Float64Array([10, 20, 30]),
+    attributes: { extraDimensions },
+  };
+
+  const inspection = inspectCopcPoint(
+    { nodeKey: '0-0-0-0', pointIndex: 0 },
+    { level: 0 },
+    points,
+    'copc-js',
+  );
+
+  assert.equal(Object.getPrototypeOf(inspection.dimensions), Object.prototype);
+  assert.equal(Object.hasOwn(inspection.dimensions, '__proto__'), true);
+  assert.equal(inspection.dimensions['__proto__'], 7n);
 });
 
 test('point buffer validation rejects extra dimensions that do not match the point count', () => {

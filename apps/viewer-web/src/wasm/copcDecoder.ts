@@ -61,6 +61,19 @@ function readOptionalUint8Dimension(
   return values;
 }
 
+function setDimensionValue(
+  dimensions: Record<string, CopcExtraDimensionValues>,
+  name: string,
+  values: CopcExtraDimensionValues,
+): void {
+  Object.defineProperty(dimensions, name, {
+    value: values,
+    enumerable: true,
+    configurable: true,
+    writable: true,
+  });
+}
+
 function readExtraDimensions(
   view: CopcPointView,
 ): Record<string, CopcExtraDimensionValues> | undefined {
@@ -75,19 +88,19 @@ function readExtraDimensions(
       for (let index = 0; index < view.pointCount; index += 1) {
         values[index] = reader.read(index) as bigint;
       }
-      extraDimensions[name] = values;
+      setDimensionValue(extraDimensions, name, values);
     } else if (reader.valueType === 'int64') {
       const values = new BigInt64Array(view.pointCount);
       for (let index = 0; index < view.pointCount; index += 1) {
         values[index] = reader.read(index) as bigint;
       }
-      extraDimensions[name] = values;
+      setDimensionValue(extraDimensions, name, values);
     } else {
       const values = new Float64Array(view.pointCount);
       for (let index = 0; index < view.pointCount; index += 1) {
         values[index] = reader.read(index) as number;
       }
-      extraDimensions[name] = values;
+      setDimensionValue(extraDimensions, name, values);
     }
   }
 
